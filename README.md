@@ -1,5 +1,9 @@
 # Disaster Response Pipeline Project
 
+## Disclaimer
+
+Much of this project, including the current README, is pulled directly from Udacity. This is a WIP and should be viewed as such.
+
 ### Instructions:
 1. Run the following commands in the project's root directory to set up your database and model.
 
