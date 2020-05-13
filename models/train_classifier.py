@@ -1,26 +1,22 @@
 import sys
 
-import nltk
-nltk.download("punkt")
-nltk.download("averaged_perceptron_tagger")
-
 import numpy as np
 import pandas as pd
 
 from sqlalchemy import create_engine
 
-from nltk import word_tokenize, pos_tag
-from nltk.stem import WordNetLemmatizer
-
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+
+from sklearn.svm import LinearSVC
+from models.utils import tokenize
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.svm import LinearSVC
-from sklearn.metrics import classification_report
 
-import pickle
+import dill
+
+from utils import tokenize
 
 def load_data(database_filepath):
     table_name = database_filepath.split('/')[-1].split('.')[0]
@@ -30,32 +26,6 @@ def load_data(database_filepath):
     y = df.drop(['id', 'message', 'original', 'genre'], axis=1)
     category_names = y.columns
     return X, y, category_names
-
-def pos_convert(pos):
-    if pos.startswith('N'):
-        pos = 'n'
-    elif pos.startswith('R'):
-        pos = 'r'
-    elif pos.startswith('V'):
-        pos = 'v'
-    elif pos.startswith('J'):
-        pos = 'a'
-    else:
-        pos = ''
-    return pos != '', pos
-
-def my_lemmatizer(word, lemmatizer=WordNetLemmatizer()):
-    word = word.lower().strip()
-    valid, pos = pos_convert(pos_tag(word)[0][0])
-    if valid:
-        word = lemmatizer.lemmatize(word, pos)
-    return word
-
-def tokenize(text):
-    lemmatizer = WordNetLemmatizer()
-    tokens = [tok for tok in map(my_lemmatizer, word_tokenize(text))]
-    return tokens
-
 
 def build_model():
     model = Pipeline([
@@ -72,7 +42,7 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 def save_model(model, model_filepath):
     with open(model_filepath, 'wb') as f:
-        pickle.dump(model, f)
+        dill.dump(model, f)
 
 
 def main():
