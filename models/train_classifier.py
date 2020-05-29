@@ -56,12 +56,23 @@ class TunableLogreg(BaseEstimator, ClassifierMixin):
         return self.logreg.predict_proba(X)
 
 class TweetTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        self.embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+
     def fit(self, X=None, y=None):
         return self
-    
+
     def transform(self, X):
-        embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
-        return embed(X).numpy()
+        return self.embed(X).numpy()
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['embed']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 
 def load_data(database_filepath):
     table_name = database_filepath.split('/')[-1].split('.')[0]
