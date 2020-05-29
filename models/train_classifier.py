@@ -6,7 +6,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.metrics import classification_report, roc_auc_score, roc_curve, auc
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -98,15 +98,31 @@ def evaluate_model(model, X_test, Y_test, category_names):
     print("Average AUC (weighted): {}".format(weighted_auc))
     print(classification_report(Y_test, y_pred, target_names=category_names))
 
+def save_roc_data(model, X_test, Y_test, roc_filepath):
+    model_probs = np.array([1. - x[:, 0] for x in model.predict_proba(X_test)]).T
+    fpr = {}
+    tpr = {}
+    roc_auc = {}
+    for i in range(36):
+        if i == 9:
+            continue
+        label = Y_test.columns[i]
+        fpr[label], tpr[label], _ = roc_curve(Y_test.iloc[:, i], model_probs[:, i])
+        roc_auc[label] = auc(fpr[label], tpr[label])
+    roc_data = {}
+    roc_data['fpr'] = fpr
+    roc_data['tpr'] = tpr
+    roc_data['auc'] = roc_auc
+    with open(roc_filepath, 'wb') as f:
+        dill.dump(roc_data, f)
 
 def save_model(model, model_filepath):
     with open(model_filepath, 'wb') as f:
         dill.dump(model, f)
 
-
 def main():
-    if len(sys.argv) == 3:
-        database_filepath, model_filepath = sys.argv[1:]
+    if len(sys.argv) == 4:
+        database_filepath, model_filepath, roc_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, Y, category_names = load_data(database_filepath)
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
@@ -117,6 +133,8 @@ def main():
         model.fit(X_train, Y_train)
         print('Evaluating model...')
         evaluate_model(model, X_test, Y_test, category_names)
+        print('Saving roc data...')
+        save_roc_data(model, X_test, Y_test, roc_filepath)
 
         print('Saving model...\n    MODEL: {}'.format(model_filepath))
         save_model(model, model_filepath)
@@ -125,9 +143,10 @@ def main():
 
     else:
         print('Please provide the filepath of the disaster messages database '\
-              'as the first argument and the filepath of the pickle file to '\
-              'save the model to as the second argument. \n\nExample: python '\
-              'train_classifier.py ../data/DisasterResponse.db classifier.pkl')
+              'as the first argument, the filepath of the pickle file to save '\
+              'the model to as the second argument, and the filepath of the '\
+              'pickle file to save the roc data to as the third argument. \n\n'\
+              'Example: python train_classifier.py ../data/DisasterResponse.db classifier.pkl roc.pkl')
 
 
 if __name__ == '__main__':
