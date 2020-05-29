@@ -12,8 +12,9 @@ from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from utils import tokenize
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
 from sklearn.multioutput import MultiOutputClassifier
 
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
@@ -79,7 +80,13 @@ def load_data(database_filepath):
 
 def build_model():
     model = Pipeline([
-        ("encoder", TweetTransformer()),
+        ("featurizer", FeatureUnion([
+            ("encoder", TweetTransformer()),
+            ("lsa", Pipeline([
+                ("tfidf", TfidfVectorizer(tokenizer=tokenize, stop_words='english')),
+                ("reducer", TruncatedSVD(n_components=250))
+            ]))
+        ])),
         ("classifier", MultiOutputClassifier(TunableLogreg()))
     ])
     return model
