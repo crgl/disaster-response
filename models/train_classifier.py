@@ -136,6 +136,8 @@ def main():
         print('Saving roc data...')
         save_roc_data(model, X_test, Y_test, roc_filepath)
 
+        print('Retraining model on full dataset...')
+        model.fit(X, Y)
         print('Saving model...\n    MODEL: {}'.format(model_filepath))
         save_model(model, model_filepath)
 
