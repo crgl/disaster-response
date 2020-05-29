@@ -6,19 +6,13 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import GaussianNB
-from utils import tokenize
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.multioutput import MultiOutputClassifier
-
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
-
 from sklearn.dummy import DummyClassifier
 
 import tensorflow as tf
