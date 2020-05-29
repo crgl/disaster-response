@@ -16,9 +16,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.multioutput import MultiOutputClassifier
 
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 
 from sklearn.dummy import DummyClassifier
+
+import tensorflow as tf
+import tensorflow_hub as hub
 
 import dill
 
@@ -57,6 +60,13 @@ class TunableLogreg(BaseEstimator, ClassifierMixin):
     def predict_proba(self, X):
         return self.logreg.predict_proba(X)
 
+class TweetTransformer(BaseEstimator, TransformerMixin):
+    def fit(self, X=None, y=None):
+        return self
+    
+    def transform(self, X):
+        embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+        return embed(X).numpy()
 
 def load_data(database_filepath):
     table_name = database_filepath.split('/')[-1].split('.')[0]
@@ -69,7 +79,7 @@ def load_data(database_filepath):
 
 def build_model():
     model = Pipeline([
-        ("featurizer", TfidfVectorizer(tokenizer=tokenize, stop_words='english', ngram_range=(1, 1))),
+        ("encoder", TweetTransformer()),
         ("classifier", MultiOutputClassifier(TunableLogreg()))
     ])
     return model
