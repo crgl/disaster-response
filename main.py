@@ -1,13 +1,20 @@
+import sys
+
+sys.path.insert(0, 'models')
+
 import json
 import plotly
 import pandas as pd
+import numpy as np
 
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
 from flask import Flask
 from flask import render_template, request, jsonify
-from plotly.graph_objs import Bar
+import plotly.graph_objs as g_o
+
+import tensorflow_hub as hub
 
 import dill
 
@@ -23,6 +30,10 @@ df = pd.read_sql_table('DisasterResponse', engine)
 with open("models/classifier.pkl", 'rb') as f:
     model = dill.load(f)
 
+model.predict(["Welcome!"])
+
+with open("models/roc.pkl", 'rb') as f:
+    roc_data = dill.load(f)
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
@@ -38,20 +49,26 @@ def index():
     graphs = [
         {
             'data': [
-                Bar(
-                    x=genre_names,
-                    y=genre_counts
-                )
+                g_o.Scatter(
+                    x=roc_data['fpr'][k],
+                    y=roc_data['tpr'][k],
+                    name='',
+                    mode='lines',
+                    showlegend=False,
+                    hovertemplate='{} (area = {:.3f})'.format(k, roc_data['auc'][k])
+                ) for k in roc_data['auc'].keys()
             ],
 
             'layout': {
-                'title': 'Distribution of Message Genres',
+                'title': 'ROC Curves for Each Category',
                 'yaxis': {
-                    'title': "Count"
+                    'title': "True Positive Rate"
                 },
                 'xaxis': {
-                    'title': "Genre"
-                }
+                    'title': "False Positive Rate"
+                },
+                'height': 700,
+                'hovermode': 'closest'
             }
         }
     ]
